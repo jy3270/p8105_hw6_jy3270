@@ -6,6 +6,7 @@ output: github_document
 ---
 ```{r, include = FALSE}
 library(tidyverse)
+library(modelr)
 ```
 
 ## Problem 2
@@ -94,4 +95,52 @@ all_result %>%
 ```
 
 According the background of out analysis, a high estimated OR indicates that homicide cases of male are more likely to be solved than female's case. Albuquerque, NM has the highest OR, which means that homicide cases of male are most likely to be solved compared to other cities, if we keep victims' age and race fixed. On the other hand, New York NY has the lowest estimated OR, which means that homicide cases of female are most likely to be solved than other cities, if we keep victims' age and race fixed.
+
+## Problm 3
+- Load Data and Package
+
+```{r}
+birthwt <- read_csv("./data/birthweight.csv")
+```
+
+```{r}
+birthwt <- read_csv("./data/birthweight.csv")
+dim(birthwt)
+birthwt = birthwt %>% drop_na()
+dim(birthwt)
+```
+
+Comparing the dimension count before and after we drop na, we find that there is no difference(there is no NA)
+
+- Load and clean the data for regression analysis
+```{r}
+birthwt = birthwt %>%
+  mutate(babysex = fct_recode(factor(babysex), male = "1", female = "2"),
+         frace = fct_recode(factor(frace), white = "1", black = "2", asian = "3", puerto_rican = "4", other = "8", unknown = "9"),
+         malform = fct_recode(factor(malform), absent = "0", present = "1"),
+         mrace = fct_recode(factor(mrace), white = "1", black = "2", asian = "3", puerto_rican = "4", other = "8")) 
+
+head(birthwt)
+```
+
+- Propose a regression model for birthweight
+
+My proposed model is based on the factor that might potentially influence the birth weight. The factors are baby’s head circumference at birth, baby’s length at birth, mother’s weight at delivery, gestational age in weeks, mother’s age at delivery (years), mother’s weight gain during pregnancy (pounds).
+```{r}
+model_1 <- lm(bwt ~ bhead + blength + delwt + gaweeks + momage + wtgain, data = birthwt)
+summary(model_1)
+```
+
+All the predictors are significant in this proposed model(p value is less than 0.05), so the model is valid in our case. 
+
+- Show a residuals against fitted value plot of model_1
+```{r}
+birthwt %>% 
+  add_residuals(model_1) %>%
+  add_predictions(model_1) %>%
+  ggplot(aes(x = pred, y = resid)) + geom_point() +
+  labs(title = "Residuals vs fitted values",
+       xlab = "Fitted value",
+       ylab = "Residual")
+```
 
