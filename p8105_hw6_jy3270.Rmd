@@ -1,0 +1,18 @@
+---
+title: "p8105_hw6_jy3270"
+author: "Jingya Yu"
+date: "2022-12-01"
+output: github_document
+---
+```{r, include = FALSE}
+library(tidyverse)
+```
+
+## Problem 2
+- import the data
+```{r}
+homicide <- read_csv("./data/homicide-data.csv") %>% janitor::clean_names()
+head(homicide)
+```
+
+ 
