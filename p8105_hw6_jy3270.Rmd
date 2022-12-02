@@ -144,3 +144,60 @@ birthwt %>%
        ylab = "Residual")
 ```
 
+- Compare your model to two others:
+
+1) One using length at birth and gestational age as predictors (main effects only)
+
+2) One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
+
+```{r}
+# uses length at birth and gestational age as predictors
+model_2 = lm(bwt ~ blength + gaweeks, data = birthwt)
+
+# uses head circumference, length, sex, and all interactions
+model_3 = lm(bwt ~ bhead + blength + babysex + 
+              bhead*blength + bhead*babysex + blength*babysex +
+              bhead*blength*babysex,
+            data = birthwt)
+```
+
+- Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate.
+```{r}
+cv_df = 
+  crossv_mc(birthwt, 100) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble),
+  )
+  
+cv_df = 
+  cv_df %>% 
+  mutate(
+    model_1_fit = map(.x = train, ~lm(bwt ~ bhead + blength + delwt + gaweeks + momage + wtgain, data = .x)),
+    model_2_fit = map(.x = train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+    model_3_fit = map(.x = train, ~lm(bwt ~ bhead + blength + babysex + 
+              bhead*blength + bhead*babysex + blength*babysex +
+              bhead*blength*babysex,
+            data = .x))
+  ) %>% 
+  mutate(
+    rmse_1 = map2_dbl(.x = model_1_fit, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_2 = map2_dbl(.x = model_2_fit, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_3 = map2_dbl(.x = model_3_fit, .y = test, ~rmse(model = .x, data = .y))
+  )
+```
+- Make comparison
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model",
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) %>% 
+  ggplot(aes(x = model, y = rmse)) +
+  geom_violin()
+```
+
+Base on the graphs above, we can see that model 1 has the lowest prediction error (rmse), model 3 's prediction error is roughly as low as model 1 but slightly higher. Model 2 has the highest prediction error which makes sense because the model pattern is simple. Based on these, we conclude that the proposed model is better within these three model in predicting child birth weight.
